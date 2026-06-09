@@ -1,5 +1,8 @@
 package com.example.useraccountservice.entity;
 
+import com.example.useraccountservice.enums.AccountStatus;
+import com.example.useraccountservice.enums.AccountType;
+import com.example.useraccountservice.enums.Currency;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,11 +29,12 @@ public class Account {
     private BigDecimal balance;
 
     @Enumerated(EnumType.STRING)
-    private Current currency;
+    private Currency currency;
 
     @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
+    @Enumerated(EnumType.STRING)
     private AccountStatus accountStatus;
 
     @OneToOne
