@@ -34,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ApiResponse<AuthResponse> registerUser(RegistrationRequest registrationRequest) {
-        log.info("We are inside the register user service");
+        log.info("register user service");
 
         if(userRepository.existsByEmail(registrationRequest.getEmail())) {
             throw new BadRequestException("Account already exist for this email");
@@ -76,6 +76,33 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ApiResponse<AuthResponse> loginUser(LoginRequest loginRequest) {
-        return null;
+        log.info("login user service");
+
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new BadRequestException("Password doesn't match");
+        }
+
+        if (!user.isEnabled()) {
+            throw new BadRequestException("User is disabled");
+        }
+
+        String token = jwtService.generateToken(user.getEmail());
+
+        UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .token(token)
+                .user(userDTO)
+                .build();
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Login Success",
+                authResponse
+        );
+
     }
 }
