@@ -1,10 +1,16 @@
 package com.example.useraccountservice.service.impl;
 
 import com.example.useraccountservice.dto.*;
+import com.example.useraccountservice.entity.Account;
 import com.example.useraccountservice.entity.Role;
 import com.example.useraccountservice.entity.User;
+import com.example.useraccountservice.enums.AccountStatus;
+import com.example.useraccountservice.enums.AccountType;
+import com.example.useraccountservice.enums.Currency;
 import com.example.useraccountservice.exceptions.BadRequestException;
 import com.example.useraccountservice.exceptions.NotFoundException;
+import com.example.useraccountservice.kafka.dto.UserRegistrationEvent;
+import com.example.useraccountservice.kafka.service.AccountEventPublisher;
 import com.example.useraccountservice.repository.AccountRepository;
 import com.example.useraccountservice.repository.RoleRepository;
 import com.example.useraccountservice.repository.UserRepository;
@@ -17,8 +23,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Slf4j
@@ -31,6 +39,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final ModelMapper modelMapper;
+    //it will generate random 8 digits(between 0000000 to 99999999)
+    private final AccountEventPublisher accountEventPublisher;
 
     @Override
     public ApiResponse<AuthResponse> registerUser(RegistrationRequest registrationRequest) {
@@ -61,6 +71,30 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(userToSave);
+
+        String accountNumber = generateUniqueAccountNumber();
+
+        Account accountToSaveToDb = Account.builder()
+                .accountNumber(accountNumber)
+                .balance(BigDecimal.ZERO)
+                .currency(Currency.USD)
+                .accountType(AccountType.SAVINGS)
+                .accountStatus(AccountStatus.ACTIVE)
+                .user(savedUser)
+                .build();
+
+        accountRepository.save(accountToSaveToDb);
+
+        // publish event to notification service
+        UserRegistrationEvent userRegistrationEvent = UserRegistrationEvent.builder()
+                .email(savedUser.getEmail())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .accountNumber(accountNumber)
+                .bankName("DIGI BANK")
+                .build();
+
+        accountEventPublisher.publishedUserRegistrationEvent(userRegistrationEvent);
 
         String token = jwtService.generateToken(savedUser.getEmail());
 
@@ -104,5 +138,19 @@ public class AuthServiceImpl implements AuthService {
                 authResponse
         );
 
+    }
+
+    private String generateUniqueAccountNumber(){
+        String accountNumber;
+
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
+        do{
+            int randomPart = random.nextInt(100_000_000);
+            accountNumber = String.format("00%08d", randomPart);
+
+        }while (accountRepository.existsByAccountNumber(accountNumber));
+
+        return accountNumber;
     }
 }
