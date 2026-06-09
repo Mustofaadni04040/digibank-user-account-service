@@ -41,4 +41,4 @@ management:
 
 jwt:
   secret: ${JWT_SECRET}
-  jwt: 86400000
+  expiration: 86400000
