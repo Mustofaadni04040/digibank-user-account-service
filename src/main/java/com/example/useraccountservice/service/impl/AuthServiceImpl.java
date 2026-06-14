@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -96,12 +97,9 @@ public class AuthServiceImpl implements AuthService {
 
         accountEventPublisher.publishedUserRegistrationEvent(userRegistrationEvent);
 
-        String token = jwtService.generateToken(savedUser.getEmail());
-
         UserDTO userDTO = modelMapper.map(savedUser, UserDTO.class);
 
         AuthResponse authResponse = AuthResponse.builder()
-                .token(token)
                 .user(userDTO)
                 .build();
 
@@ -123,7 +121,11 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("User is disabled");
         }
 
-        String token = jwtService.generateToken(user.getEmail());
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .toList();
+
+        String token = jwtService.generateToken(user.getEmail(), roles);
 
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
 
