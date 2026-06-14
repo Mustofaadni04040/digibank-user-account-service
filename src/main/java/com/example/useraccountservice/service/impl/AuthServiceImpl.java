@@ -53,11 +53,11 @@ public class AuthServiceImpl implements AuthService {
         Set<Role> roles = new HashSet<>();
 
         String roleName = (registrationRequest.getRole() != null && !registrationRequest.getRole().isBlank())
-                ? registrationRequest.getRole().toLowerCase()
+                ? registrationRequest.getRole().toUpperCase()
                 : "CUSTOMER";
 
         Role databaseRole = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new NotFoundException("Role with name" + roleName + "Not found"));
+                .orElseThrow(() -> new NotFoundException("Role with name" + roleName + " Not found"));
 
         roles.add(databaseRole);
 
