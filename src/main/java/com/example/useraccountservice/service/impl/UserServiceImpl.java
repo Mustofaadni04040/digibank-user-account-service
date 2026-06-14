@@ -3,6 +3,7 @@ package com.example.useraccountservice.service.impl;
 import com.example.useraccountservice.dto.*;
 import com.example.useraccountservice.entity.Account;
 import com.example.useraccountservice.entity.User;
+import com.example.useraccountservice.exceptions.BadRequestException;
 import com.example.useraccountservice.exceptions.NotFoundException;
 import com.example.useraccountservice.repository.AccountRepository;
 import com.example.useraccountservice.repository.UserRepository;
@@ -11,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -43,12 +46,54 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse<UserWithAccountDTO> searchUser(String email, String accountNumber) {
-        return null;
+        log.info("Searching for users");
+
+        User user;
+        Account account;
+        if(email != null && !email.isBlank()) {
+            user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new NotFoundException("User with email not found"));
+
+            account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new NotFoundException("Account not found"));
+        } else if (accountNumber != null && !accountNumber.isBlank()) {
+            account = accountRepository.findByAccountNumber(accountNumber)
+                    .orElseThrow(() -> new NotFoundException("Account not found"));
+            user = account.getUser();
+        } else {
+            throw new BadRequestException("Email and Account Number is required");
+        }
+
+        UserWithAccountDTO userWithAccountDTO = mapToUserWithAccount(user, account);
+
+        return new ApiResponse<>(HttpStatus.OK.value(), "Profile retrieved", userWithAccountDTO);
     }
 
     @Override
     public ApiResponse<Page<UserDTO>> getAllUsers(String roleName, Pageable pageable) {
-        return null;
+        log.info("Getting all users");
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("createdAt").descending()
+        );
+
+        Page<User> userPage;
+
+        if (roleName != null && !roleName.isBlank()) {
+            userPage = userRepository.findByRoleName(roleName.toUpperCase(), sortedPageable);
+        } else {
+            userPage = userRepository.findAll(sortedPageable);
+        }
+
+        Page<UserDTO> dtoPage = userPage.map(user -> modelMapper.map(user, UserDTO.class));
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "User fetched successfully",
+                dtoPage
+        );
     }
 
     @Override
