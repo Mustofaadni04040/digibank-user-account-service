@@ -98,12 +98,43 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse<UserStatisticsDTO> getUserStatistics() {
-        return null;
+        long total = userRepository.count();
+        long enabled = userRepository.countByEnabledTrue();
+
+        UserStatisticsDTO stats = UserStatisticsDTO
+                .builder()
+                .totalUsers(total)
+                .activeUsers(enabled)
+                .inactiveUsers(total - enabled)
+                .totalAccounts(accountRepository.count())
+                .averageAccountPerUser(accountRepository.count())
+                .customersAccount(userRepository.countByRoleName("CUSTOMER"))
+                .adminsAccount(userRepository.countByRoleName("ADMIN"))
+                .build();
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Stats fetched successfully",
+                stats
+        );
     }
 
     @Override
-    public ApiResponse<String> toggleUserStatus() {
-        return null;
+    public ApiResponse<String> toggleUserStatus(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user with ID not found"));
+
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+
+        String status = user.isEnabled() ? "Enabled" : "Disabled";
+        log.info("User has been {}", status);
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Stats fetched successfully",
+                null
+        );
     }
 
     private UserWithAccountDTO mapToUserWithAccount(User user, Account account) {

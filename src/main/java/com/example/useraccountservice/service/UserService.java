@@ -12,5 +12,5 @@ public interface UserService {
     ApiResponse<UserWithAccountDTO> searchUser(String email, String accountNumber);
     ApiResponse<Page<UserDTO>> getAllUsers(String roleName, Pageable pageable);
     ApiResponse<UserStatisticsDTO> getUserStatistics();
-    ApiResponse<String> toggleUserStatus();
+    ApiResponse<String> toggleUserStatus(Long userId);
 }
