@@ -18,7 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByEnabledTrue();
 
-    @Query("SELECT COUNT(DISTINCT U) FROM User u JOIN u.roles r WHERE r.name = :roleName")
+    @Query("SELECT COUNT(DISTINCT u) FROM User u JOIN u.roles r WHERE r.name = :roleName")
     long countByRoleName(@Param("roleName") String roleName);
 
     @Query("SELECT u FROM User u JOIN u.roles r WHERE  r = :role")
