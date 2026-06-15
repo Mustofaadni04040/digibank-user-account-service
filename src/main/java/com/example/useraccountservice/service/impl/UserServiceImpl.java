@@ -132,7 +132,7 @@ public class UserServiceImpl implements UserService {
 
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
-                "Stats fetched successfully",
+                "User status updated successfully",
                 null
         );
     }
