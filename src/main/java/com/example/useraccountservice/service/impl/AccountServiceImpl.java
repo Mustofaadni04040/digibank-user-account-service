@@ -44,6 +44,8 @@ public class AccountServiceImpl implements AccountService {
 
         AccountDTO accountDTO = modelMapper.map(account, AccountDTO.class);
 
+        accountDTO.setOwnerEmail(account.getUser().getEmail());
+
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
                 "Account Retrieved",
