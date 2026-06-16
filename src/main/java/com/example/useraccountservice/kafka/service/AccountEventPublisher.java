@@ -1,5 +1,6 @@
 package com.example.useraccountservice.kafka.service;
 
+import com.example.useraccountservice.kafka.dto.BalanceUpdateEvent;
 import com.example.useraccountservice.kafka.dto.UserRegistrationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,13 +16,23 @@ public class AccountEventPublisher {
 
     // topics
     private static  final String USER_TOPIC = "user-registered-events";
+    private static  final String BALANCE_UPDATE_TOPIC = "balance-update-notification-events";
 
     public void publishedUserRegistrationEvent(UserRegistrationEvent event) {
         try {
             kafkaTemplate.send(USER_TOPIC, event.getEmail(), event);
-            log.info("Event sent: {}", event.getEmail());
+            log.info("User registration event sent: {}", event.getEmail());
         } catch (Exception e) {
             log.info("Failed to publish user registered event: {}", e.getMessage());
+        }
+    }
+
+    public void publishTransactionNotificationEvent(BalanceUpdateEvent event) {
+        try {
+            kafkaTemplate.send(BALANCE_UPDATE_TOPIC, event.getEmail(), event);
+            log.info("Balance update event sent: {}", event.getEmail());
+        } catch (Exception e) {
+            log.info("Failed to publish balance update event: {}", e.getMessage());
         }
     }
 }
